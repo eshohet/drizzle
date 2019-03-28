@@ -6,8 +6,8 @@ import { getWeb3Assets } from './utils/helpers'
 import Drizzle, { getOrCreateWeb3Contract } from '../src/Drizzle'
 
 describe('Drizzle', () => {
-  let accounts
   const networkId = global.defaultNetworkId
+  let accounts
 
   beforeAll(async () => {
     ;({ accounts } = await getWeb3Assets())
@@ -15,67 +15,65 @@ describe('Drizzle', () => {
 
   describe('Unit', () => {
     describe('getOrCreateWeb3Contract', () => {
-      let store, state
+      let mockedStore, state
 
       beforeEach(() => {
         state = { web3: { networkId }, accounts }
-        store = { getState: () => state }
+        mockedStore = { getState: () => state }
       })
 
       test('recognizes a web3 contract', () => {
-        const web3Contract = {}
-        const contractConfig = { web3Contract }
-        const resolved = getOrCreateWeb3Contract(store, contractConfig, {})
-        expect(resolved).toBe(web3Contract)
+        const mockedWeb3Contract = {}
+        const mockedContractConfig = { web3Contract: mockedWeb3Contract }
+
+        const resolved = getOrCreateWeb3Contract(mockedStore, mockedContractConfig, {})
+        expect(resolved).toBe(mockedWeb3Contract)
       })
 
       test('recognizes a truffleArtifact', () => {
         const address = '0x0123456789'
         const abi = 'ABI'
         const deployedBytecode = 'deadbeef'
-        const truffleArtifact = {
+        const mockedTruffleArtifact = {
           abi,
           networks: {[networkId]: {address}},
           deployedBytecode
         }
-        const contractCreator = jest.fn()
-        const web3 = { eth: { Contract: contractCreator } }
-        getOrCreateWeb3Contract(store, truffleArtifact, web3)
+        const contractCreatorSpy = jest.fn()
+        const mockedWeb3 = { eth: { Contract: contractCreatorSpy } }
+        getOrCreateWeb3Contract(mockedStore, mockedTruffleArtifact, mockedWeb3)
 
         // Default selected is the 1st by convention
         const selectedAccount = accounts[0]
         const expectedArgs = [abi, address, { from: selectedAccount, data: deployedBytecode }]
-        expect(contractCreator).toHaveBeenCalledWith(...expectedArgs)
+        expect(contractCreatorSpy).toHaveBeenCalledWith(...expectedArgs)
       })
     })
   })
 
   describe('API', () => {
-    let dispatch, store, state
+    let dispatchSpy, mockedStore, state
 
     let drizzle, drizzleOptions
-    let truffleArtifact
-
-    let web3, contractCreator
+    let contractCreatorSpy
 
     beforeEach(async () => {
-      contractCreator = jest.fn()
-      web3 = { eth: { Contract: contractCreator } }
-      dispatch = jest.fn()
+      contractCreatorSpy = jest.fn()
+      let mockedWeb3 = { eth: { Contract: contractCreatorSpy } }
+      dispatchSpy = jest.fn()
       drizzleOptions = {}
       state = { web3: { networkId }, accounts }
-      store = { dispatch, getState: () => state }
+      mockedStore = { dispatch: dispatchSpy, getState: () => state }
 
       // Create Drizzle and simulate web3 resolution
-      drizzle = new Drizzle(drizzleOptions, store)
-      drizzle.web3 = web3
-      ;({ truffleArtifact } = await getWeb3Assets())
+      drizzle = new Drizzle(drizzleOptions, mockedStore)
+      drizzle.web3 = mockedWeb3
     })
 
     describe('Construction', () => {
       test('fires up drizzle store', () => {
         const expectedAction = {type: 'DRIZZLE_INITIALIZING', drizzle, options: drizzleOptions}
-        expect(dispatch).toHaveBeenCalledWith(expectedAction)
+        expect(dispatchSpy).toHaveBeenCalledWith(expectedAction)
       })
     })
 
@@ -90,7 +88,8 @@ describe('Drizzle', () => {
         expect(DrizzleContract).toHaveBeenCalled()
       })
 
-      test('TruffleArtifact Contracts', () => {
+      test('TruffleArtifact Contracts', async () => {
+        const { truffleArtifact } = await getWeb3Assets()
         drizzle.addContract(truffleArtifact)
 
         expect(drizzle.contractList).toHaveLength(1)
