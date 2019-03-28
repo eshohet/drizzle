@@ -3,7 +3,7 @@ jest.mock('../src/DrizzleContract')
 import DrizzleContract from '../src/DrizzleContract'
 
 import { getWeb3Assets } from './utils/helpers'
-import Drizzle, { getOrCreateWeb3Contract } from '../src/drizzle'
+import Drizzle, { getOrCreateWeb3Contract } from '../src/Drizzle'
 
 describe('Drizzle', () => {
   let accounts
