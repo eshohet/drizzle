@@ -1,17 +1,13 @@
-/* eslint import/first: 0 */
-jest.mock('../src/DrizzleContract')
-import DrizzleContract from '../src/DrizzleContract'
+import MockedDrizzleContract from '../src/DrizzleContract'
 
 import { getWeb3Assets } from './utils/helpers'
 import Drizzle, { getOrCreateWeb3Contract } from '../src/Drizzle'
 
+jest.mock('../src/DrizzleContract')
+
 describe('Drizzle', () => {
   const networkId = global.defaultNetworkId
-  let accounts
-
-  beforeAll(async () => {
-    ;({ accounts } = await getWeb3Assets())
-  })
+  const accounts = global.accounts
 
   describe('Unit', () => {
     describe('getOrCreateWeb3Contract', () => {
@@ -33,7 +29,7 @@ describe('Drizzle', () => {
       test('recognizes a truffleArtifact', () => {
         const address = '0x0123456789'
         const abi = 'ABI'
-        const deployedBytecode = 'deadbeef'
+        const deployedBytecode = "I am Jack's caffeine fueled ledger code"
         const mockedTruffleArtifact = {
           abi,
           networks: {[networkId]: {address}},
@@ -54,30 +50,31 @@ describe('Drizzle', () => {
   describe('API', () => {
     let dispatchSpy, mockedStore, state
 
-    let drizzle, drizzleOptions
+    const drizzleOptions = {}
+    let drizzle
     let contractCreatorSpy
 
-    beforeEach(async () => {
-      contractCreatorSpy = jest.fn()
-      let mockedWeb3 = { eth: { Contract: contractCreatorSpy } }
-      dispatchSpy = jest.fn()
-      drizzleOptions = {}
+    beforeEach(() => {
+      MockedDrizzleContract.mockClear()
+
+      // Mock Store
       state = { web3: { networkId }, accounts }
+      dispatchSpy = jest.fn()
       mockedStore = { dispatch: dispatchSpy, getState: () => state }
 
       // Create Drizzle and simulate web3 resolution
+      contractCreatorSpy = jest.fn()
+      let mockedWeb3 = { eth: { Contract: contractCreatorSpy } }
       drizzle = new Drizzle(drizzleOptions, mockedStore)
       drizzle.web3 = mockedWeb3
     })
 
-    describe('Construction', () => {
-      test('fires up drizzle store', () => {
-        const expectedAction = {type: 'DRIZZLE_INITIALIZING', drizzle, options: drizzleOptions}
-        expect(dispatchSpy).toHaveBeenCalledWith(expectedAction)
-      })
+    test('Constructor fires up drizzle store', () => {
+      const expectedAction = {type: 'DRIZZLE_INITIALIZING', drizzle, options: drizzleOptions}
+      expect(dispatchSpy).toHaveBeenCalledWith(expectedAction)
     })
 
-    describe('can add:', () => {
+    describe('Can add:', () => {
       test('Web3 Contracts', () => {
         const web3Contract = {}
         const contractConfig = { web3Contract }
@@ -85,7 +82,7 @@ describe('Drizzle', () => {
         drizzle.addContract(contractConfig)
 
         expect(drizzle.contractList).toHaveLength(1)
-        expect(DrizzleContract).toHaveBeenCalled()
+        expect(MockedDrizzleContract).toHaveBeenCalledTimes(1)
       })
 
       test('TruffleArtifact Contracts', async () => {
@@ -93,7 +90,7 @@ describe('Drizzle', () => {
         drizzle.addContract(truffleArtifact)
 
         expect(drizzle.contractList).toHaveLength(1)
-        expect(DrizzleContract).toHaveBeenCalled()
+        expect(MockedDrizzleContract).toHaveBeenCalledTimes(1)
       })
     })
   })
