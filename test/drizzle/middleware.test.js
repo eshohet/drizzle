@@ -136,7 +136,7 @@ describe('Drizzle Middleware', () => {
         expect(actions).toHaveLength(5)
 
         const errorAction = actions[4]
-        expect(errorAction.type).toEqual('DRIZZLE/ERROR_ADD_NOTIFICATION')
+        expect(errorAction.type).toEqual('ERROR_ADD_CONTRACT')
         expect(errorAction.error.message).toEqual(`Contract already exists: ${mockedContractConfig.contractName}`)
         expect(errorAction.attemptedAction).toEqual(addContractAction)
       })

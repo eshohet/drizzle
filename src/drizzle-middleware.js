@@ -24,7 +24,7 @@ export const drizzleMiddleware = drizzleInstance => store => next => action => {
 
       // Notify user via
       const notificationAction = {
-        type: 'DRIZZLE/ERROR_ADD_NOTIFICATION',
+        type: 'ERROR_ADD_CONTRACT',
         error,
         attemptedAction: action
       }
