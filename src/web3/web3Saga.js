@@ -21,7 +21,7 @@ export function * initializeWeb3 ({ options }) {
       const { ethereum } = window
       web3 = new Web3(ethereum)
       try {
-        yield call(ethereum.enable)
+        yield call([ethereum, 'enable'])
         yield put({ type: Action.WEB3_INITIALIZED })
         return web3
       } catch (error) {
