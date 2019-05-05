@@ -43,21 +43,25 @@ describe('Loads Web3', () => {
     })
   })
 
-  describe('with ethereum', () => {
+  describe('with ethereum, EIP-1102 compliance', () => {
+    let ethereum
     let mockedEthereumEnable
 
-    beforeAll(async () => {
-      global.window = {}
-
+    beforeEach(async () => {
       mockedEthereumEnable = jest.fn()
-      global.provider.enable = mockedEthereumEnable
-      global.window.ethereum = global.provider
+      mockedEthereumEnable = jest.fn()
+      ethereum = { enable: mockedEthereumEnable }
 
-      gen = initializeWeb3({ options: {} })
+      global.window = {
+        ethereum
+      }
     })
 
-    test('get web3', async () => {
-      expect(gen.next().value).toEqual(call(mockedEthereumEnable))
+    test('invokes `ethereum.enable`', async () => {
+      gen = initializeWeb3({ options: {} })
+      // get permission according to EIP 1102
+      //
+      expect(gen.next().value).toEqual(call({ context: ethereum, fn: ethereum.enable }))
 
       expect(gen.next().value).toEqual(put({ type: Action.WEB3_INITIALIZED }))
 
@@ -100,7 +104,6 @@ describe('Loads Web3', () => {
       gen = initializeWeb3({ options })
 
       // First action dispatched
-      // expect(dispatchedActions[0].type).toEqual(Action.WEB3_INITIALIZED)
       expect(gen.next().value).toEqual(put({ type: Action.WEB3_INITIALIZED }))
       resolvedWeb3 = gen.next().value
 
