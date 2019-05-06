@@ -1,5 +1,6 @@
 import { initializeWeb3, getNetworkId } from '../src/web3/web3Saga'
 import { call, put } from 'redux-saga/effects'
+import { runSaga } from 'redux-saga'
 import * as Action from '../src/web3/constants'
 
 const hasWeb3Shape = obj => {
@@ -47,27 +48,53 @@ describe('Loads Web3', () => {
     let ethereum
     let mockedEthereumEnable
 
-    beforeEach(async () => {
-      mockedEthereumEnable = jest.fn()
+    test('invokes `ethereum.enable`', async () => {
       mockedEthereumEnable = jest.fn()
       ethereum = { enable: mockedEthereumEnable }
+      global.window = { ethereum }
 
-      global.window = {
-        ethereum
-      }
-    })
-
-    test('invokes `ethereum.enable`', async () => {
       gen = initializeWeb3({ options: {} })
       // get permission according to EIP 1102
       //
-      expect(gen.next().value).toEqual(call({ context: ethereum, fn: ethereum.enable }))
+      expect(gen.next(null).value).toEqual(
+        call({ context: ethereum, fn: ethereum.enable })
+      )
 
       expect(gen.next().value).toEqual(put({ type: Action.WEB3_INITIALIZED }))
 
-      // is it a Web3 object?
       resolvedWeb3 = gen.next().value
       hasWeb3Shape(resolvedWeb3)
+    })
+
+    test('when user opts in', async () => {
+      mockedEthereumEnable = jest.fn()
+      ethereum = { enable: mockedEthereumEnable }
+      global.window = { ethereum }
+      const dispatched = []
+
+      const result = await runSaga({
+        dispatch: (action) => dispatched.push(action),
+        getState: () => ({state: 'test'})
+      }, initializeWeb3, { options: {} }).done
+
+      // result should be a proper web3 provider
+      expect(result).toBeInstanceOf(require('web3'))
+    })
+
+    test('when user opts out', async () => {
+      // simulate opting out
+      mockedEthereumEnable = jest.fn(() => { throw new Error('oops') })
+      ethereum = { enable: mockedEthereumEnable }
+      global.window = { ethereum }
+      const dispatched = []
+
+      const result = await runSaga({
+        dispatch: (action) => dispatched.push(action),
+        getState: () => ({state: 'test'})
+      }, initializeWeb3, { options: {} }).done
+
+      // saga result is undefined when user opts out
+      expect(result).toBe(undefined)
     })
   })
 
