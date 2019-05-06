@@ -72,10 +72,14 @@ describe('Loads Web3', () => {
       global.window = { ethereum }
       const dispatched = []
 
-      const result = await runSaga({
-        dispatch: (action) => dispatched.push(action),
-        getState: () => ({state: 'test'})
-      }, initializeWeb3, { options: {} }).done
+      const result = await runSaga(
+        {
+          dispatch: action => dispatched.push(action),
+          getState: () => ({ state: 'test' })
+        },
+        initializeWeb3,
+        { options: {} }
+      ).done
 
       // result should be a proper web3 provider
       expect(result).toBeInstanceOf(require('web3'))
@@ -83,15 +87,21 @@ describe('Loads Web3', () => {
 
     test('when user opts out', async () => {
       // simulate opting out
-      mockedEthereumEnable = jest.fn(() => { throw new Error('oops') })
+      mockedEthereumEnable = jest.fn(() => {
+        throw new Error('oops')
+      })
       ethereum = { enable: mockedEthereumEnable }
       global.window = { ethereum }
       const dispatched = []
 
-      const result = await runSaga({
-        dispatch: (action) => dispatched.push(action),
-        getState: () => ({state: 'test'})
-      }, initializeWeb3, { options: {} }).done
+      const result = await runSaga(
+        {
+          dispatch: action => dispatched.push(action),
+          getState: () => ({ state: 'test' })
+        },
+        initializeWeb3,
+        { options: {} }
+      ).done
 
       // saga result is undefined when user opts out
       expect(result).toBe(undefined)
