@@ -1,4 +1,5 @@
 import { initializeWeb3, getNetworkId } from '../src/web3/web3Saga'
+import { WEB3_USER_DENIED } from '../src/web3/constants'
 import { call, put } from 'redux-saga/effects'
 import { runSaga } from 'redux-saga'
 import * as Action from '../src/web3/constants'
@@ -105,6 +106,9 @@ describe('Loads Web3', () => {
 
       // saga result is undefined when user opts out
       expect(result).toBe(undefined)
+
+      // and the last action should be WEB3_USER_DENIED
+      expect(dispatched.pop()).toEqual({ type: WEB3_USER_DENIED })
     })
   })
 
